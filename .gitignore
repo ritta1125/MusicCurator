@@ -1,0 +1,51 @@
+# Build files
+.gradle/
+build/
+out/
+*.class
+target/
+
+# IDE files
+.idea/
+*.iml
+.vscode/
+.settings/
+.project
+.classpath
+*.swp
+*.swo
+
+# Credentials and sensitive files
+config.properties
+credentials/
+*.json
+!package.json
+!build.gradle.json
+tokens/
+*.key
+*.pem
+*.p12
+
+# Logs
+*.log
+logs/
+log/
+
+# OS files
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# Generated exports
+exportToHTML/
+
+# Temporary files
+*.tmp
+*.temp
+*.bak
+*~
+.cache/
+
+# Test files
+test-output/
+*.test

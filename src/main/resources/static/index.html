@@ -1,0 +1,671 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Cinematic Music Curator</title>
+  <style>
+    *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+
+    :root {
+      --bg:       #0d0d12;
+      --surface:  #1a1a26;
+      --surface2: #24243a;
+      --border:   #32324d;
+      --primary:  #8B5CF6;
+      --primary2: #6D28D9;
+      --accent:   #F59E0B;
+      --green:    #10B981;
+      --red:      #EF4444;
+      --text:     #e2e8f0;
+      --muted:    #94a3b8;
+    }
+
+    body {
+      background: var(--bg);
+      color: var(--text);
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif;
+      min-height: 100vh;
+    }
+
+    /* ── Header ─────────────────────────────────────── */
+    header {
+      text-align: center;
+      padding: 2.5rem 1rem 1.5rem;
+      background: linear-gradient(180deg, rgba(139,92,246,.15) 0%, transparent 100%);
+      border-bottom: 1px solid var(--border);
+    }
+    header h1 {
+      font-size: 2.25rem;
+      font-weight: 800;
+      background: linear-gradient(135deg, #a78bfa, #F59E0B);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+      letter-spacing: -0.02em;
+    }
+    header p { color: var(--muted); margin-top: .4rem; font-size: .9rem; }
+
+    /* ── Step indicator ─────────────────────────────── */
+    .steps {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      max-width: 520px;
+      margin: 1.5rem auto;
+      padding: 0 1rem;
+      gap: 0;
+    }
+    .step-item { display: flex; align-items: center; flex: 1; }
+    .step-dot {
+      width: 30px; height: 30px; border-radius: 50%;
+      border: 2px solid var(--border);
+      display: flex; align-items: center; justify-content: center;
+      font-size: .7rem; font-weight: 700;
+      color: var(--muted); background: var(--surface);
+      transition: all .3s; flex-shrink: 0; z-index: 1;
+    }
+    .step-dot.active  { border-color: var(--primary); background: var(--primary); color: #fff; }
+    .step-dot.done    { border-color: var(--green);   background: var(--green);   color: #fff; }
+    .step-line        { flex: 1; height: 2px; background: var(--border); transition: background .3s; }
+    .step-line.done   { background: var(--green); }
+
+    /* ── Layout ─────────────────────────────────────── */
+    .container { max-width: 860px; margin: 0 auto; padding: 1rem 1rem 3rem; }
+
+    /* ── Card ───────────────────────────────────────── */
+    .card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      padding: 1.75rem 2rem;
+      margin-bottom: 1.25rem;
+    }
+    .card-title { font-size: 1.15rem; font-weight: 700; margin-bottom: 1.5rem; }
+
+    /* ── Platform grid ──────────────────────────────── */
+    .platform-grid { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 1rem; }
+    .platform-card {
+      background: var(--surface2); border: 2px solid var(--border);
+      border-radius: 12px; padding: 1.5rem 1rem;
+      cursor: pointer; transition: all .2s; text-align: center;
+    }
+    .platform-card:hover  { border-color: var(--primary); transform: translateY(-2px); }
+    .platform-card.active { border-color: var(--green); background: rgba(16,185,129,.08); }
+    .platform-icon { font-size: 2.25rem; margin-bottom: .6rem; }
+    .platform-name { font-size: 1rem; font-weight: 700; }
+    .platform-desc { font-size: .75rem; color: var(--muted); margin-top: .25rem; line-height: 1.5; }
+
+    /* ── Inputs ─────────────────────────────────────── */
+    label {
+      display: block; font-size: .72rem; color: var(--muted);
+      font-weight: 700; text-transform: uppercase; letter-spacing: .06em;
+      margin-bottom: .4rem;
+    }
+    .form-group { margin-bottom: 1rem; }
+    .input-row { display: flex; gap: .75rem; }
+    input[type="text"], input[type="number"], select {
+      flex: 1; background: var(--surface2); border: 1px solid var(--border);
+      border-radius: 8px; padding: .65rem .9rem;
+      color: var(--text); font-size: .875rem; outline: none;
+      transition: border-color .2s;
+    }
+    input:focus, select:focus { border-color: var(--primary); }
+    input::placeholder { color: var(--muted); }
+
+    /* ── Buttons ─────────────────────────────────────── */
+    .btn {
+      padding: .65rem 1.25rem; border-radius: 8px; border: none;
+      font-size: .875rem; font-weight: 600; cursor: pointer;
+      transition: all .2s; display: inline-flex; align-items: center; gap: .4rem;
+    }
+    .btn-primary { background: var(--primary); color: #fff; }
+    .btn-primary:hover { background: var(--primary2); }
+    .btn-accent  { background: var(--accent); color: #1a0a00; }
+    .btn-accent:hover { opacity: .9; }
+    .btn-ghost   { background: transparent; color: var(--muted); border: 1px solid var(--border); }
+    .btn-ghost:hover { background: var(--surface2); color: var(--text); }
+    .btn:disabled { opacity: .45; cursor: not-allowed; pointer-events: none; }
+
+    /* ── Alerts ──────────────────────────────────────── */
+    .alert { padding: .65rem .9rem; border-radius: 8px; font-size: .85rem; margin-bottom: 1rem; }
+    .alert-error   { background: rgba(239,68,68,.12);  border: 1px solid rgba(239,68,68,.3);  color: #fca5a5; }
+    .alert-success { background: rgba(16,185,129,.12); border: 1px solid rgba(16,185,129,.3); color: #6ee7b7; }
+
+    /* ── Loading ─────────────────────────────────────── */
+    .loading { display: flex; flex-direction: column; align-items: center; gap: .85rem; padding: 1.5rem; color: var(--muted); font-size: .875rem; }
+    .spinner { width: 34px; height: 34px; border: 3px solid var(--border); border-top-color: var(--primary); border-radius: 50%; animation: spin .7s linear infinite; }
+    @keyframes spin { to { transform: rotate(360deg); } }
+
+    /* ── Status badge ────────────────────────────────── */
+    .status-badge {
+      display: inline-flex; align-items: center; gap: .4rem;
+      font-size: .75rem; padding: .25rem .65rem; border-radius: 20px;
+      background: rgba(16,185,129,.12); color: #6ee7b7;
+      border: 1px solid rgba(16,185,129,.25); margin-bottom: 1rem;
+    }
+    .status-dot { width: 6px; height: 6px; border-radius: 50%; background: var(--green); }
+
+    /* ── Mood chart ──────────────────────────────────── */
+    .mood-chart { display: flex; flex-direction: column; gap: .6rem; }
+    .mood-row { display: grid; grid-template-columns: 170px 1fr 36px; align-items: center; gap: .75rem; }
+    .mood-label { font-size: .78rem; color: var(--muted); text-align: right; }
+    .mood-bar-bg { background: var(--surface2); border-radius: 4px; height: 18px; overflow: hidden; }
+    .mood-bar-fill { height: 100%; border-radius: 4px; width: 0; transition: width .7s cubic-bezier(.4,0,.2,1); }
+    .mood-count { font-size: .75rem; color: var(--muted); text-align: right; }
+
+    /* ── Stats grid ──────────────────────────────────── */
+    .stats-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: .75rem; margin-top: 1.5rem; }
+    .stat-card { background: var(--surface2); border-radius: 10px; padding: .9rem 1rem; text-align: center; }
+    .stat-value { font-size: 1.4rem; font-weight: 700; color: var(--primary); }
+    .stat-label { font-size: .7rem; color: var(--muted); margin-top: .2rem; text-transform: uppercase; letter-spacing: .04em; }
+
+    /* ── Mood pills ──────────────────────────────────── */
+    .mood-pills { display: flex; flex-wrap: wrap; gap: .4rem; margin-top: .5rem; }
+    .mood-pill {
+      padding: .35rem .8rem; border-radius: 20px; font-size: .78rem;
+      border: 1px solid var(--border); cursor: pointer; transition: all .2s;
+      color: var(--muted); background: var(--surface2); user-select: none;
+    }
+    .mood-pill.mixed { border-color: var(--primary); color: var(--primary); }
+    .mood-pill.mixed.selected { background: var(--primary); color: #fff; }
+
+    /* ── Track list ──────────────────────────────────── */
+    .track-scroll { max-height: 420px; overflow-y: auto; padding-right: 4px; }
+    .track-scroll::-webkit-scrollbar { width: 4px; }
+    .track-scroll::-webkit-scrollbar-track { background: var(--surface2); border-radius: 2px; }
+    .track-scroll::-webkit-scrollbar-thumb { background: var(--primary); border-radius: 2px; }
+    .track-list { display: flex; flex-direction: column; gap: .45rem; }
+    .track-item {
+      background: var(--surface2); border: 1px solid var(--border); border-radius: 10px;
+      padding: .65rem 1rem; display: grid;
+      grid-template-columns: 26px 1fr auto;
+      align-items: center; gap: .75rem; transition: border-color .2s;
+    }
+    .track-item:hover { border-color: var(--primary); }
+    .track-num { font-size: .7rem; color: var(--muted); text-align: center; }
+    .track-name { font-size: .875rem; font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .track-artist { font-size: .72rem; color: var(--muted); }
+    .track-meta { display: flex; flex-direction: column; align-items: flex-end; gap: .3rem; }
+    .mood-badge { font-size: .62rem; padding: .15rem .45rem; border-radius: 10px; font-weight: 600; white-space: nowrap; }
+    .track-bars { display: flex; gap: 6px; }
+    .bar-group { display: flex; flex-direction: column; align-items: center; gap: 2px; }
+    .mini-bar { width: 30px; height: 4px; background: var(--surface); border-radius: 2px; overflow: hidden; position: relative; }
+    .mini-bar-fill { height: 100%; border-radius: 2px; position: absolute; left: 0; top: 0; }
+    .bar-label { font-size: .58rem; color: var(--muted); }
+    .track-bpm { font-size: .62rem; color: var(--muted); }
+
+    /* ── Action bar ──────────────────────────────────── */
+    .action-bar { display: flex; justify-content: space-between; align-items: center; margin-top: 1.5rem; }
+    .divider { height: 1px; background: var(--border); margin: 1.25rem 0; }
+
+    /* ── Save success ────────────────────────────────── */
+    .success-block { text-align: center; padding: 1.5rem; }
+    .success-icon { font-size: 2.75rem; margin-bottom: .75rem; }
+    .success-link { color: var(--primary); text-decoration: none; font-size: .875rem; }
+    .success-link:hover { text-decoration: underline; }
+
+    /* ── Hint text ───────────────────────────────────── */
+    .hint { font-size: .72rem; color: var(--muted); margin-top: .4rem; line-height: 1.5; }
+
+    .hidden { display: none !important; }
+
+    @media (max-width: 700px) {
+      .platform-grid { grid-template-columns: 1fr; }
+    }
+    @media (max-width: 580px) {
+      .platform-grid { grid-template-columns: 1fr; }
+      .stats-grid { grid-template-columns: repeat(2, 1fr); }
+      .mood-row { grid-template-columns: 110px 1fr 28px; }
+      header h1 { font-size: 1.65rem; }
+      .card { padding: 1.25rem; }
+    }
+  </style>
+</head>
+<body>
+
+<header>
+  <h1>🎬 Cinematic Music Curator</h1>
+  <p>Craft perfectly flowing cinematic playlists from your music library</p>
+</header>
+
+<!-- Step indicator -->
+<div class="steps">
+  <div class="step-item"><div class="step-dot active" id="sd1">1</div><div class="step-line" id="sl1"></div></div>
+  <div class="step-item"><div class="step-dot" id="sd2">2</div><div class="step-line" id="sl2"></div></div>
+  <div class="step-item"><div class="step-dot" id="sd3">3</div><div class="step-line" id="sl3"></div></div>
+  <div class="step-item"><div class="step-dot" id="sd4">4</div><div class="step-line" id="sl4"></div></div>
+  <div class="step-item"><div class="step-dot" id="sd5">5</div></div>
+</div>
+
+<div class="container">
+
+  <!-- ── Step 1: Connect ──────────────────────────────── -->
+  <div id="sec-connect" class="card">
+    <div class="card-title">Connect a Platform</div>
+    <div id="connect-err" class="alert alert-error hidden"></div>
+    <div class="platform-grid">
+      <div class="platform-card" id="pc-spotify" onclick="connect('spotify')">
+        <div class="platform-icon">🎵</div>
+        <div class="platform-name">Spotify</div>
+        <div class="platform-desc">Client credentials auth<br>Rich audio features</div>
+      </div>
+      <div class="platform-card" id="pc-youtube" onclick="connect('youtube')">
+        <div class="platform-icon">📺</div>
+        <div class="platform-name">YouTube</div>
+        <div class="platform-desc">OAuth browser flow<br>Spotify audio matching</div>
+      </div>
+      <div class="platform-card" id="pc-applemusic" onclick="connect('applemusic')">
+        <div class="platform-icon">🍎</div>
+        <div class="platform-name">Apple Music</div>
+        <div class="platform-desc">MusicKit JS auth<br>Spotify audio matching</div>
+      </div>
+    </div>
+    <div id="connect-load" class="loading hidden">
+      <div class="spinner"></div>
+      <span id="connect-load-text">Connecting…</span>
+    </div>
+  </div>
+
+  <!-- ── Step 2: Analyze ──────────────────────────────── -->
+  <div id="sec-analyze" class="card hidden">
+    <div class="card-title">Analyze a Playlist</div>
+    <div id="platform-badge" class="status-badge"><div class="status-dot"></div><span id="platform-label">Connected</span></div>
+    <div id="analyze-err" class="alert alert-error hidden"></div>
+    <div class="form-group">
+      <label>Playlist ID</label>
+      <div class="input-row">
+        <input type="text" id="playlist-id" placeholder="Paste Spotify or YouTube playlist ID…" />
+        <button class="btn btn-primary" onclick="analyze()">Analyze</button>
+      </div>
+      <p class="hint">Spotify: the ID at the end of the playlist URL &nbsp;|&nbsp; YouTube: the <code>list=</code> query parameter &nbsp;|&nbsp; Apple Music: the ID from a library or catalog playlist URL</p>
+    </div>
+    <div id="analyze-load" class="loading hidden"><div class="spinner"></div><span>Analyzing playlist…</span></div>
+  </div>
+
+  <!-- ── Step 3a: Results ──────────────────────────────── -->
+  <div id="sec-results" class="card hidden">
+    <div class="card-title">Mood Analysis</div>
+    <div id="mood-chart" class="mood-chart"></div>
+    <div id="stats-grid" class="stats-grid"></div>
+    <div class="action-bar">
+      <button class="btn btn-ghost" onclick="goTo('sec-analyze', 2)">← Analyze Another</button>
+      <button class="btn btn-primary" onclick="goTo('sec-curate', 3)">Curate Playlist →</button>
+    </div>
+  </div>
+
+  <!-- ── Step 3b: Curate ───────────────────────────────── -->
+  <div id="sec-curate" class="card hidden">
+    <div class="card-title">Curate Settings</div>
+    <div class="form-group">
+      <label>Target Mood</label>
+      <div class="mood-pills" id="mood-pills"></div>
+    </div>
+    <div class="form-group">
+      <label>Playlist Length</label>
+      <input type="number" id="curate-len" value="20" min="1" max="100" style="max-width:90px" />
+    </div>
+    <div id="curate-err" class="alert alert-error hidden"></div>
+    <div id="curate-load" class="loading hidden"><div class="spinner"></div><span>Curating your cinematic playlist…</span></div>
+    <div class="action-bar">
+      <button class="btn btn-ghost" onclick="goTo('sec-results', 3)">← Back to Analysis</button>
+      <button class="btn btn-accent" onclick="curate()">🎬 Create Playlist</button>
+    </div>
+  </div>
+
+  <!-- ── Step 4: Curated playlist ─────────────────────── -->
+  <div id="sec-curated" class="card hidden">
+    <div class="card-title">Your Cinematic Playlist</div>
+    <p id="curated-summary" style="color:var(--muted);font-size:.85rem;margin-bottom:1rem;"></p>
+    <div class="track-scroll">
+      <div class="track-list" id="curated-tracks"></div>
+    </div>
+    <div class="action-bar">
+      <button class="btn btn-ghost" onclick="goTo('sec-curate', 3)">← Adjust Settings</button>
+      <button class="btn btn-primary" onclick="showSave()">💾 Save Playlist →</button>
+    </div>
+  </div>
+
+  <!-- ── Step 5: Save ──────────────────────────────────── -->
+  <div id="sec-save" class="card hidden">
+    <div class="card-title">Save Playlist</div>
+    <div id="save-err" class="alert alert-error hidden"></div>
+
+    <div id="save-success" class="hidden">
+      <div class="success-block">
+        <div class="success-icon">🎬</div>
+        <h3 style="margin-bottom:.5rem;">Playlist Created!</h3>
+        <p style="color:var(--muted);font-size:.875rem;margin-bottom:1rem;">Your cinematic playlist is ready.</p>
+        <a id="playlist-url" href="#" target="_blank" class="success-link">Open Playlist →</a>
+        <div style="margin-top:1.5rem;">
+          <button class="btn btn-ghost" onclick="location.reload()">Start Over</button>
+        </div>
+      </div>
+    </div>
+
+    <div id="save-form">
+      <div class="form-group">
+        <label>Playlist Name</label>
+        <input type="text" id="playlist-name" placeholder="My Cinematic Playlist" />
+      </div>
+      <div id="spotify-user-row" class="form-group hidden">
+        <label>Spotify User ID</label>
+        <input type="text" id="spotify-user-id" placeholder="your_spotify_username" />
+      </div>
+      <div id="save-load" class="loading hidden"><div class="spinner"></div><span>Saving…</span></div>
+      <div class="action-bar">
+        <button class="btn btn-ghost" onclick="goTo('sec-curated', 4)">← Back to Playlist</button>
+        <button class="btn btn-primary" onclick="save()">Save to <span id="save-platform">Platform</span></button>
+      </div>
+    </div>
+  </div>
+
+</div><!-- /container -->
+
+<script>
+/* ── State ──────────────────────────────────────────────────── */
+const S = {
+  platform: null,
+  moods: [],
+  selectedMood: '',
+  curatedMood: null,
+  step: 1,
+};
+
+const MOOD_COLORS = {
+  'Cinematic Ambient':     '#3B82F6',
+  'Epic/Intense':          '#EF4444',
+  'Melancholic/Emotional': '#8B5CF6',
+  'Uplifting/Triumphant':  '#F59E0B',
+  'Adventure/Journey':     '#F97316',
+  'Peaceful/Serene':       '#10B981',
+  'Contemplative':         '#6366F1',
+  'Rhythmic/Groovy':       '#EC4899',
+  'Neutral/Transitional':  '#6B7280',
+};
+
+/* ── Step indicator ─────────────────────────────────────────── */
+function setStep(n) {
+  S.step = n;
+  for (let i = 1; i <= 5; i++) {
+    const dot  = document.getElementById('sd' + i);
+    const line = document.getElementById('sl' + i);
+    if (i < n)       { dot.className = 'step-dot done';   dot.textContent = '✓'; }
+    else if (i === n){ dot.className = 'step-dot active';  dot.textContent = i; }
+    else             { dot.className = 'step-dot';         dot.textContent = i; }
+    if (line) line.className = i < n ? 'step-line done' : 'step-line';
+  }
+}
+
+const SECTIONS = ['sec-connect','sec-analyze','sec-results','sec-curate','sec-curated','sec-save'];
+function showOnly(id) {
+  SECTIONS.forEach(s => document.getElementById(s).classList.add('hidden'));
+  document.getElementById(id).classList.remove('hidden');
+}
+function goTo(section, step) { setStep(step); showOnly(section); }
+
+/* ── Step 1: Connect ────────────────────────────────────────── */
+async function connect(platform) {
+  clearErr('connect-err');
+  const loadText = document.getElementById('connect-load-text');
+  loadText.textContent = platform === 'youtube'
+    ? 'Opening YouTube OAuth — complete it in your browser…'
+    : platform === 'applemusic'
+    ? 'Loading MusicKit — authorize Apple Music in the popup…'
+    : 'Connecting to Spotify…';
+  show('connect-load');
+
+  try {
+    let body = { platform };
+
+    if (platform === 'applemusic') {
+      // 1. Get developer token from backend
+      const { token: developerToken } = await api('/api/apple-dev-token', 'GET');
+
+      // 2. Load MusicKit JS if not already loaded
+      if (!window.MusicKit) {
+        await loadScript('https://js-cdn.music.apple.com/musickit/v3/musickit.js');
+      }
+
+      // 3. Configure MusicKit with the developer token
+      await MusicKit.configure({
+        developerToken,
+        app: { name: 'Cinematic Music Curator', build: '1.0' },
+      });
+
+      // 4. Prompt user to authorize — returns the Music User Token
+      const musicUserToken = await MusicKit.getInstance().authorize();
+      body.musicUserToken = musicUserToken;
+    }
+
+    await api('/api/auth', 'POST', body);
+    S.platform = platform;
+
+    document.getElementById('pc-spotify').classList.toggle('active', platform === 'spotify');
+    document.getElementById('pc-youtube').classList.toggle('active', platform === 'youtube');
+    document.getElementById('pc-applemusic').classList.toggle('active', platform === 'applemusic');
+
+    const labels = { spotify: '🎵 Spotify Connected', youtube: '📺 YouTube Connected', applemusic: '🍎 Apple Music Connected' };
+    const platforms = { spotify: 'Spotify', youtube: 'YouTube', applemusic: 'Apple Music' };
+    document.getElementById('platform-label').textContent = labels[platform];
+    document.getElementById('save-platform').textContent = platforms[platform];
+
+    if (platform === 'spotify') {
+      document.getElementById('spotify-user-row').classList.remove('hidden');
+    }
+
+    setStep(2); showOnly('sec-analyze');
+  } catch (e) {
+    showErr('connect-err', e.message);
+  } finally {
+    hide('connect-load');
+  }
+}
+
+function loadScript(src) {
+  return new Promise((resolve, reject) => {
+    const s = document.createElement('script');
+    s.src = src;
+    s.onload = resolve;
+    s.onerror = () => reject(new Error('Failed to load ' + src));
+    document.head.appendChild(s);
+  });
+}
+
+/* ── Step 2: Analyze ────────────────────────────────────────── */
+async function analyze() {
+  const playlistId = document.getElementById('playlist-id').value.trim();
+  if (!playlistId) { showErr('analyze-err', 'Please enter a playlist ID'); return; }
+
+  clearErr('analyze-err');
+  show('analyze-load');
+
+  try {
+    const data = await api('/api/analyze', 'POST', { playlistId });
+    S.moods = data.availableMoods || [];
+    renderMoodChart(data.moodDistribution, data.stats.total);
+    renderStats(data.stats);
+    buildMoodPills(S.moods);
+    setStep(3); showOnly('sec-results');
+  } catch (e) {
+    showErr('analyze-err', e.message);
+  } finally {
+    hide('analyze-load');
+  }
+}
+
+function renderMoodChart(dist, total) {
+  const el = document.getElementById('mood-chart');
+  el.innerHTML = '';
+  const entries = Object.entries(dist);
+  const max = Math.max(...entries.map(([,v]) => v));
+
+  entries.forEach(([mood, count]) => {
+    const color = MOOD_COLORS[mood] || '#6B7280';
+    const barW  = Math.round(count / max * 100);
+    el.innerHTML += `
+      <div class="mood-row">
+        <div class="mood-label">${esc(mood)}</div>
+        <div class="mood-bar-bg">
+          <div class="mood-bar-fill" style="background:${color}" data-w="${barW}"></div>
+        </div>
+        <div class="mood-count">${count}</div>
+      </div>`;
+  });
+  setTimeout(() => el.querySelectorAll('.mood-bar-fill').forEach(b => b.style.width = b.dataset.w + '%'), 40);
+}
+
+function renderStats(stats) {
+  document.getElementById('stats-grid').innerHTML = `
+    <div class="stat-card"><div class="stat-value">${stats.total}</div><div class="stat-label">Tracks</div></div>
+    <div class="stat-card"><div class="stat-value">${stats.avgTempo}</div><div class="stat-label">Avg BPM</div></div>
+    <div class="stat-card"><div class="stat-value">${pct(stats.avgEnergy)}</div><div class="stat-label">Avg Energy</div></div>
+    <div class="stat-card"><div class="stat-value">${pct(stats.avgValence)}</div><div class="stat-label">Avg Valence</div></div>
+    ${stats.topKeys && stats.topKeys.length ? `
+    <div class="stat-card" style="grid-column:span 2">
+      <div class="stat-value" style="font-size:1rem">${stats.topKeys.join(' · ')}</div>
+      <div class="stat-label">Top Keys</div>
+    </div>` : ''}`;
+}
+
+/* ── Step 3: Curate ─────────────────────────────────────────── */
+function buildMoodPills(moods) {
+  S.selectedMood = '';
+  const el = document.getElementById('mood-pills');
+  el.innerHTML = `<div class="mood-pill mixed selected" onclick="pickMood('', this)">Mixed</div>`;
+  moods.forEach(m => {
+    el.innerHTML += `<div class="mood-pill" data-mood="${esc(m)}" onclick="pickMood('${esc(m)}', this)">${esc(m)}</div>`;
+  });
+}
+
+function pickMood(mood, el) {
+  S.selectedMood = mood;
+  document.querySelectorAll('.mood-pill').forEach(p => {
+    p.classList.remove('selected');
+    p.style.cssText = '';
+  });
+  el.classList.add('selected');
+  if (mood) {
+    const c = MOOD_COLORS[mood] || '#6B7280';
+    el.style.background = c; el.style.color = '#fff'; el.style.borderColor = c;
+  }
+}
+
+async function curate() {
+  clearErr('curate-err');
+  show('curate-load');
+  try {
+    const length = parseInt(document.getElementById('curate-len').value) || 20;
+    const data = await api('/api/curate', 'POST', { mood: S.selectedMood, length });
+    S.curatedMood = data.mood;
+    renderCurated(data.tracks, data.mood);
+    setStep(4); showOnly('sec-curated');
+  } catch (e) {
+    showErr('curate-err', e.message);
+  } finally {
+    hide('curate-load');
+  }
+}
+
+function renderCurated(tracks, mood) {
+  document.getElementById('curated-summary').textContent =
+    `${tracks.length} tracks · ${mood} · Cinematic energy arc applied`;
+
+  document.getElementById('curated-tracks').innerHTML = tracks.map((t, i) => {
+    const c = MOOD_COLORS[t.mood] || '#6B7280';
+    return `
+      <div class="track-item">
+        <div class="track-num">${i + 1}</div>
+        <div>
+          <div class="track-name">${esc(t.name)}</div>
+          <div class="track-artist">${esc(t.artist)}</div>
+        </div>
+        <div class="track-meta">
+          <span class="mood-badge" style="background:${c}22;color:${c}">${esc(t.mood || 'Unknown')}</span>
+          <div class="track-bars">
+            ${miniBar('E', t.energy,       '#EF4444')}
+            ${miniBar('V', t.valence,      '#F59E0B')}
+            ${miniBar('D', t.danceability, '#10B981')}
+          </div>
+          <div class="track-bpm">${Math.round(t.tempo || 0)} BPM</div>
+        </div>
+      </div>`;
+  }).join('');
+}
+
+function miniBar(label, val, color) {
+  const w = Math.round((val || 0) * 100);
+  return `
+    <div class="bar-group">
+      <div class="mini-bar"><div class="mini-bar-fill" style="width:${w}%;background:${color}"></div></div>
+      <div class="bar-label">${label}</div>
+    </div>`;
+}
+
+/* ── Step 5: Save ───────────────────────────────────────────── */
+function showSave() {
+  document.getElementById('save-success').classList.add('hidden');
+  document.getElementById('save-form').classList.remove('hidden');
+  clearErr('save-err');
+  setStep(5); showOnly('sec-save');
+}
+
+async function save() {
+  const name = document.getElementById('playlist-name').value.trim();
+  if (!name) { showErr('save-err', 'Please enter a playlist name'); return; }
+
+  const body = { name, mood: S.curatedMood || 'mixed' };
+  if (S.platform === 'spotify') {
+    const uid = document.getElementById('spotify-user-id').value.trim();
+    if (!uid) { showErr('save-err', 'Please enter your Spotify user ID'); return; }
+    body.userId = uid;
+  }
+
+  clearErr('save-err');
+  show('save-load');
+  try {
+    const data = await api('/api/save', 'POST', body);
+    document.getElementById('save-form').classList.add('hidden');
+    document.getElementById('save-success').classList.remove('hidden');
+    const link = document.getElementById('playlist-url');
+    link.href = data.url;
+    link.textContent = 'Open Playlist →';
+  } catch (e) {
+    showErr('save-err', e.message);
+  } finally {
+    hide('save-load');
+  }
+}
+
+/* ── Utilities ──────────────────────────────────────────────── */
+async function api(url, method, body) {
+  const opts = { method, headers: {} };
+  if (body) {
+    opts.headers['Content-Type'] = 'application/json';
+    opts.body = JSON.stringify(body);
+  }
+  const res = await fetch(url, opts);
+  const data = await res.json();
+  if (!res.ok) throw new Error(data.error || 'Request failed');
+  return data;
+}
+
+function showErr(id, msg) {
+  const el = document.getElementById(id);
+  el.textContent = '⚠ ' + msg;
+  el.classList.remove('hidden');
+}
+function clearErr(id) {
+  const el = document.getElementById(id);
+  el.textContent = '';
+  el.classList.add('hidden');
+}
+function show(id) { document.getElementById(id).classList.remove('hidden'); }
+function hide(id) { document.getElementById(id).classList.add('hidden'); }
+function esc(s)  { return (s||'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])); }
+function pct(v)  { return Math.round((v||0)*100)+'%'; }
+
+setStep(1);
+</script>
+</body>
+</html>
